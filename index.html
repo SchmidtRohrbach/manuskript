@@ -268,7 +268,7 @@ svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-widt
   font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0;
   tab-size: 4; -moz-tab-size: 4;
   white-space: pre-wrap; overflow-wrap: break-word; word-break: normal;
-  padding: 22px max(24px, calc((100% - 76ch) / 2)) 45vh;
+  padding: 22px clamp(24px, 6%, 96px) 45vh;
 }
 #mk-ta {
   position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
@@ -306,12 +306,12 @@ svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-widt
 .pv-scroll {
   position: relative; flex: 1; min-height: 0;
   overflow-y: auto; overflow-x: hidden;
-  padding: 40px clamp(18px, 6%, 56px) 40vh;
+  padding: 40px clamp(18px, 6%, 96px) 40vh;
 }
 
 /* ---------- Gesetzte Seite ---------- */
 .prose {
-  max-width: 68ch; margin-inline: auto;
+  margin-inline: auto;
   font-family: var(--f-read); font-size: 17.5px; line-height: 1.66; color: var(--ink);
   font-optical-sizing: auto; overflow-wrap: break-word;
   hyphens: auto; -webkit-hyphens: auto;
@@ -466,6 +466,90 @@ kbd { font: 500 11px/1.2 var(--f-mono); padding: 2px 6px; border: 1px solid var(
 .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 .toast button { color: var(--accent-on-ink); font-weight: 600; white-space: nowrap; }
 
+/* ---------- Druckhinweis ---------- */
+.dlg-sm { width: min(480px, 100%); }
+.dlg-steps { margin: 0 0 16px; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; color: var(--ink); line-height: 1.5; }
+.dlg-steps b { font-weight: 600; }
+.dlg-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.dlg-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.dlg-check input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+.dlg-btns { display: flex; gap: 8px; margin-left: auto; }
+
+/* ---------- Druck ---------- */
+.print-root { display: none; }
+@media print {
+  @page {
+    size: A4; margin: 20mm 18mm 20mm;
+    @bottom-center { content: counter(page) " / " counter(pages); font: 8.5pt "IBM Plex Sans", "Segoe UI", Arial, sans-serif; color: #777; }
+  }
+  html, body { height: auto !important; overflow: visible !important; background: #fff !important; color: #111 !important; }
+  :root { padding: 0 !important; }
+  body > *:not(#mk-print) { display: none !important; }
+  .print-root {
+    display: block !important; color: #161a24;
+    font: 11pt/1.55 "Source Serif 4", Georgia, "Times New Roman", serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    overflow-wrap: break-word; hyphens: auto;
+  }
+  .print-root > * { margin: 0; }
+  .print-root > * + * { margin-top: .75em; }
+  .print-root h1, .print-root h2, .print-root h3, .print-root h4, .print-root h5, .print-root h6 {
+    break-after: avoid; page-break-after: avoid; break-inside: avoid; hyphens: manual; line-height: 1.22; color: #0f121a;
+  }
+  .print-root h1 { font-size: 21pt; font-weight: 700; letter-spacing: -.01em; }
+  .print-root h2 { font-size: 14.5pt; font-weight: 600; padding-bottom: 2pt; border-bottom: .6pt solid #c9cdd6; }
+  .print-root h3 { font-size: 12.5pt; font-weight: 600; }
+  .print-root h4 { font-size: 11pt; font-weight: 700; }
+  .print-root h5, .print-root h6 { font: 600 8.5pt/1.4 "IBM Plex Sans", "Segoe UI", Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #555; }
+  .print-root > * + h1 { margin-top: 1.4em; }
+  .print-root > * + h2 { margin-top: 1.3em; }
+  .print-root > * + h3, .print-root > * + h4 { margin-top: 1.1em; }
+  .print-root > :is(h1, h2, h3, h4, h5, h6) + * { margin-top: .4em; }
+  .print-root p, .print-root li { orphans: 3; widows: 3; }
+  .print-root a { color: #1f3bbf; text-decoration: underline; text-decoration-thickness: .5pt; text-underline-offset: 1.5pt; }
+  .print-root strong { font-weight: 700; }
+  .print-root del { color: #666; }
+  .print-root ul, .print-root ol { padding-left: 1.4em; }
+  .print-root li + li { margin-top: .2em; }
+  .print-root li > * + * { margin-top: .3em; }
+  .print-root li.ptask { list-style: none; }
+  .print-root ul:has(> li.ptask) { padding-left: .3em; }
+  .print-root .pbox {
+    display: inline-block; width: 9pt; height: 9pt; margin-right: 5pt; vertical-align: -1pt;
+    border: .9pt solid #555; border-radius: 1.5pt; position: relative;
+  }
+  .print-root .pbox.on::after {
+    content: ""; position: absolute; left: 2.6pt; top: .4pt; width: 2.6pt; height: 5.2pt;
+    border: solid #111; border-width: 0 1.3pt 1.3pt 0; transform: rotate(45deg);
+  }
+  .print-root li.ptask.done { color: #666; }
+  .print-root blockquote { padding-left: 10pt; border-left: 2pt solid #c9cdd6; color: #444; font-style: italic; break-inside: avoid; }
+  .print-root blockquote > * { margin: 0; }
+  .print-root blockquote > * + * { margin-top: .5em; }
+  .print-root code { font: 8.8pt "IBM Plex Mono", Consolas, "Courier New", monospace; background: #eef0f4; padding: .5pt 3pt; border-radius: 2pt; hyphens: none; }
+  .print-root pre {
+    background: #f3f4f7; border: .6pt solid #dcdfe6; border-radius: 3pt; padding: 7pt 9pt;
+    white-space: pre-wrap; overflow-wrap: anywhere; break-inside: avoid; font-size: 8.8pt; line-height: 1.5;
+  }
+  .print-root pre code { background: none; padding: 0; font-size: inherit; }
+  .print-root table { border-collapse: collapse; font: 9.5pt/1.4 "IBM Plex Sans", "Segoe UI", Arial, sans-serif; break-inside: avoid; hyphens: none; }
+  .print-root th, .print-root td { border: .6pt solid #c4c8d1; padding: 3.5pt 7pt; text-align: left; vertical-align: top; }
+  .print-root th { background: #eef0f4; font-weight: 600; }
+  .print-root th[align="center"], .print-root td[align="center"] { text-align: center; }
+  .print-root th[align="right"], .print-root td[align="right"] { text-align: right; }
+  .print-root hr { border: 0; border-top: .6pt solid #c4c8d1; height: 0; margin-block: 1.3em; }
+  .print-root img { max-width: 100%; height: auto; break-inside: avoid; }
+  .print-root mark { background: #fff1a8; color: inherit; }
+  .print-root kbd { font: 8.5pt "IBM Plex Mono", Consolas, monospace; border: .6pt solid #bbb; border-radius: 2pt; padding: 0 3pt; }
+  .print-root .hljs-keyword, .print-root .hljs-selector-tag, .print-root .hljs-literal { color: #7a3cc2; }
+  .print-root .hljs-string, .print-root .hljs-regexp, .print-root .hljs-addition { color: #0d7646; }
+  .print-root .hljs-number, .print-root .hljs-symbol, .print-root .hljs-bullet { color: #b0500a; }
+  .print-root .hljs-comment, .print-root .hljs-quote { color: #6f788c; font-style: italic; }
+  .print-root .hljs-title, .print-root .hljs-section { color: #2b45d3; }
+  .print-root .hljs-type, .print-root .hljs-built_in, .print-root .hljs-name { color: #a1336a; }
+  .print-root .hljs-attr, .print-root .hljs-attribute, .print-root .hljs-property, .print-root .hljs-params, .print-root .hljs-meta { color: #22689a; }
+}
+
 /* ---------- Formatiert bearbeiten (wie Word) ---------- */
 .app:not([data-view="word"]) .pane-word { display: none; }
 .app[data-view="word"] .pane-edit, .app[data-view="word"] .pane-preview { display: none; }
@@ -566,7 +650,10 @@ kbd { font: 500 11px/1.2 var(--f-mono); padding: 2px 6px; border: 1px solid var(
           <p class="menu-label" data-need="dl" hidden>Als Datei speichern</p>
           <button type="button" role="menuitem" data-exp="md" data-need="dl" data-icon="file" hidden><span>Markdown-Datei</span><span class="hint">.md</span></button>
           <button type="button" role="menuitem" data-exp="html" data-need="dl" data-icon="html" hidden><span>HTML-Seite</span><span class="hint">.html</span></button>
+          <button type="button" role="menuitem" data-exp="pdf" data-need="print" data-icon="pdf" hidden><span>PDF-Datei</span><span class="hint">.pdf</span></button>
           <div class="menu-sep" data-need="dl" hidden></div>
+          <button type="button" role="menuitem" data-exp="print" data-need="print" data-icon="print" hidden><span>Drucken …</span><span class="hint" id="mk-print-key">Strg+P</span></button>
+          <div class="menu-sep" data-need="print" hidden></div>
           <p class="menu-label">In die Zwischenablage</p>
           <button type="button" role="menuitem" data-exp="copy-md" data-icon="copy"><span>Markdown kopieren</span></button>
           <button type="button" role="menuitem" data-exp="copy-html" data-icon="copy"><span>HTML kopieren</span></button>
@@ -678,7 +765,30 @@ kbd { font: 500 11px/1.2 var(--f-mono); padding: 2px 6px; border: 1px solid var(
   </div>
 </div>
 
+<div class="overlay" id="mk-printhint" hidden>
+  <div class="dialog dlg-sm" role="dialog" aria-modal="true" aria-labelledby="mk-ph-title">
+    <div class="dlg-head">
+      <h2 id="mk-ph-title">Als PDF speichern</h2>
+      <button class="ibtn" id="mk-ph-close" type="button" aria-label="Schließen" data-icon="close"></button>
+    </div>
+    <p class="dlg-sub" id="mk-ph-sub">Gleich öffnet sich das Druckfenster von Edge. Dort:</p>
+    <ol class="dlg-steps">
+      <li id="mk-ph-step1">Bei <b>Drucker</b> die Option <b>„Als PDF speichern“</b> wählen.</li>
+      <li>Unter <b>Weitere Einstellungen</b> den Haken bei <b>Kopf- und Fußzeilen</b> entfernen. Die Seitenzahlen setzt Manuskript selbst. Edge merkt sich die Einstellung.</li>
+      <li id="mk-ph-step3">Auf <b>Speichern</b> klicken und den Ordner wählen.</li>
+    </ol>
+    <div class="dlg-foot">
+      <label class="dlg-check"><input type="checkbox" id="mk-ph-never"> Nicht mehr anzeigen</label>
+      <div class="dlg-btns">
+        <button class="btn" id="mk-ph-cancel" type="button">Abbrechen</button>
+        <button class="btn btn-primary" id="mk-ph-go" type="button">Weiter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="mk-toast" role="status" aria-live="polite"></div>
+<div class="print-root" id="mk-print"></div>
 <input type="file" id="mk-file" accept=".md,.markdown,.mdown,.mkd,.txt,text/markdown,text/plain" multiple hidden>
 
 <script>window.MANUSKRIPT_OFFLINE = true;</script>
@@ -2992,7 +3102,8 @@ return __m['turndown'].default;
     stPos: $('#mk-st-pos'), stWords: $('#mk-st-words'), stChars: $('#mk-st-chars'), stRead: $('#mk-st-read'),
     stSync: $('#mk-st-sync'), stSyncTxt: $('#mk-st-sync-txt'), stAllow: $('#mk-st-allow'), toast: $('#mk-toast'),
     wtoolbar: $('#mk-wtoolbar'), linkbar: $('#mk-linkbar'), linkUrl: $('#mk-link-url'), linkApply: $('#mk-link-apply'),
-    linkRemove: $('#mk-link-remove'), linkClose: $('#mk-link-close'), wordScroll: $('#mk-word-scroll'), word: $('#mk-word')
+    linkRemove: $('#mk-link-remove'), linkClose: $('#mk-link-close'), wordScroll: $('#mk-word-scroll'), word: $('#mk-word'),
+    print: $('#mk-print')
   };
 
   const ICONS = {
@@ -3019,7 +3130,10 @@ return __m['turndown'].default;
     up: '<path d="m6 15 6-6 6 6"/>',
     down: '<path d="m6 9 6 6 6-6"/>',
     file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
-    html: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>'
+    html: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+    width: '<path d="M3.5 5v14M20.5 5v14"/><path d="M7.5 12h9"/><path d="m10 9-3 3 3 3M14 9l3 3-3 3"/>',
+    print: '<path d="M7 9V4h10v5"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6H7z"/>',
+    pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 16.5v-4h1.3a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h.9a2 2 0 0 0 0-4z"/>'
   };
   const icon = (n) => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>';
 
@@ -3697,6 +3811,54 @@ return __m['turndown'].default;
       updateActiveHeading(activePane);
     });
   }
+  /* ---------------- Drucken und PDF ---------------- */
+  const CAN_PRINT = OFFLINE && typeof window.print === 'function';
+  let printTitle = null;
+  function fillPrint() {
+    flushWord();
+    const d = docs[currentId];
+    if (!d) return;
+    el.print.innerHTML = cleanHtml(d.content);
+    el.print.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      const box = document.createElement('span');
+      const on = cb.hasAttribute('checked');
+      box.className = 'pbox' + (on ? ' on' : '');
+      cb.replaceWith(box);
+      const li = box.closest('li');
+      if (li) { li.classList.add('ptask'); if (on) li.classList.add('done'); }
+    });
+    el.print.querySelectorAll('img').forEach((img) => { img.loading = 'eager'; });
+    if (printTitle === null) printTitle = document.title;
+    document.title = fileBase(titleOf(d.content));
+  }
+  function clearPrint() {
+    el.print.textContent = '';
+    if (printTitle !== null) { document.title = printTitle; printTitle = null; }
+  }
+  function runPrint() {
+    fillPrint();
+    setTimeout(() => {
+      try { window.print(); } catch (e) { toast('Das Druckfenster ließ sich nicht öffnen.'); }
+    }, 60);
+  }
+  let hintKind = 'pdf';
+  function startPrint(kind) {
+    hintKind = kind;
+    if (ui.printHintSeen) { runPrint(); return; }
+    const pdf = kind === 'pdf';
+    $('#mk-ph-title').textContent = pdf ? 'Als PDF speichern' : 'Drucken';
+    $('#mk-ph-step1').innerHTML = pdf
+      ? 'Bei <b>Drucker</b> die Option <b>„Als PDF speichern“</b> wählen.'
+      : 'Bei <b>Drucker</b> deinen Drucker wählen. Für eine PDF-Datei <b>„Als PDF speichern“</b>.';
+    $('#mk-ph-step3').innerHTML = pdf
+      ? 'Auf <b>Speichern</b> klicken und den Ordner wählen.'
+      : 'Auf <b>Drucken</b> klicken.';
+    $('#mk-ph-never').checked = false;
+    $('#mk-printhint').hidden = false;
+    $('#mk-ph-go').focus();
+  }
+  function closePrintHint() { $('#mk-printhint').hidden = true; }
+
   function applySide() {
     el.app.classList.toggle('side-closed', !ui.side);
     el.sideToggle.setAttribute('aria-expanded', String(mqNarrow.matches ? el.app.classList.contains('drawer-open') : ui.side));
@@ -5231,6 +5393,7 @@ return __m['turndown'].default;
     const keys = [
       [MOD + '+F', 'Suchen und ersetzen'],
       [MOD + '+S', 'Sofort sichern'],
+      [MOD + '+P', 'Drucken oder als PDF speichern'],
       ['Tab', 'Listenpunkt einrücken'],
       [SHIFT + '+Tab', 'Listenpunkt ausrücken'],
       ['Enter', 'In Listen den nächsten Punkt beginnen, auf leerem Punkt die Liste beenden'],
@@ -5405,6 +5568,7 @@ return __m['turndown'].default;
       else if (k === 'copy-md') copyText(d.content, 'Markdown');
       else if (k === 'copy-html') copyText(cleanHtml(d.content), 'HTML');
       else if (k === 'open') openFiles();
+      else if (k === 'pdf' || k === 'print') startPrint(k);
     });
     el.exportMenu.addEventListener('keydown', (e) => {
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -5418,6 +5582,18 @@ return __m['turndown'].default;
       if (!el.exportMenu.hidden && !e.target.closest('.menu-wrap')) closeMenu(false);
     });
 
+    if (CAN_PRINT) {
+      window.addEventListener('beforeprint', fillPrint);
+      window.addEventListener('afterprint', clearPrint);
+    }
+    $('#mk-ph-go').addEventListener('click', () => {
+      if ($('#mk-ph-never').checked) { ui.printHintSeen = true; saveUi(); }
+      closePrintHint();
+      runPrint();
+    });
+    $('#mk-ph-cancel').addEventListener('click', closePrintHint);
+    $('#mk-ph-close').addEventListener('click', closePrintHint);
+    $('#mk-printhint').addEventListener('click', (e) => { if (e.target.id === 'mk-printhint') closePrintHint(); });
     el.helpBtn.addEventListener('click', openHelp);
     el.helpClose.addEventListener('click', closeHelp);
     el.help.addEventListener('click', (e) => { if (e.target === el.help) closeHelp(); });
@@ -5434,6 +5610,7 @@ return __m['turndown'].default;
       }
       if (e.key === 'Escape') {
         if (!el.exportMenu.hidden) closeMenu(true);
+        else if (!$('#mk-printhint').hidden) closePrintHint();
         else if (!el.help.hidden) closeHelp();
         else if (el.app.classList.contains('drawer-open')) closeDrawer();
       }
@@ -5477,6 +5654,10 @@ return __m['turndown'].default;
     bindWord();
     el.follow.checked = !!ui.follow;
     applySide(); applySideTab(); applyView();
+    if (CAN_PRINT) {
+      $$('[data-need="print"]').forEach((n) => { n.hidden = false; });
+      const pk = $('#mk-print-key'); if (pk) pk.textContent = MOD + '+P';
+    }
     const start = (ui.current && docs[ui.current]) ? ui.current : sortedDocs()[0].id;
     openDoc(start, { keepDrawer: true });
     fitBackdrop(); updateToolbarFade(); updateSync();
