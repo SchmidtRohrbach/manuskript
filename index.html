@@ -187,6 +187,7 @@ svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-widt
 .doc-del .i { width: 16px; height: 16px; }
 .doc-item:hover .doc-del, .doc-item.is-active .doc-del, .doc-del:focus-visible { opacity: 1; }
 .doc-del:hover { color: var(--bad); }
+.doc-del.is-close:hover { color: var(--ink); }
 .doc-item.is-confirm { flex-direction: column; gap: 8px; padding: 10px 11px; background: var(--sheet); border-color: var(--bad); }
 .doc-confirm-q { font-size: 13px; }
 .doc-confirm-q strong { font-weight: 600; overflow-wrap: anywhere; }
@@ -3922,10 +3923,19 @@ return __m['turndown'].default;
       open.addEventListener('click', () => openDoc(d.id));
       const del = document.createElement('button');
       del.type = 'button'; del.className = 'doc-del';
-      del.setAttribute('aria-label', '„' + title + '“ löschen');
-      del.title = 'Löschen';
-      del.innerHTML = icon('trash');
-      del.addEventListener('click', () => { pendingDelete = d.id; focusConfirm = true; renderDocList(); });
+      if (fileHandles[d.id]) {
+        // Mit einer Datei verknüpft: nur schließen, die Datei auf der Platte bleibt unberührt
+        del.classList.add('is-close');
+        del.setAttribute('aria-label', '„' + title + '“ schließen');
+        del.title = 'Schließen (die Datei bleibt erhalten)';
+        del.innerHTML = icon('close');
+        del.addEventListener('click', () => closeDoc(d.id));
+      } else {
+        del.setAttribute('aria-label', '„' + title + '“ löschen');
+        del.title = 'Löschen';
+        del.innerHTML = icon('trash');
+        del.addEventListener('click', () => { pendingDelete = d.id; focusConfirm = true; renderDocList(); });
+      }
       li.append(open, del);
       el.docList.appendChild(li);
     }
@@ -3990,7 +4000,7 @@ return __m['turndown'].default;
       if (rest.length) openDoc(rest[0].id, { keepDrawer: true }); else newDoc(NEW_DOC, false);
     } else renderDocList();
     const title = titleOf(d.content);
-    const msg = handle ? '„' + title + '“ aus der Liste entfernt, die Datei bleibt erhalten' : '„' + title + '“ gelöscht';
+    const msg = handle ? '„' + title + '“ geschlossen, die Datei bleibt erhalten' : '„' + title + '“ gelöscht';
     toast(msg, { label: 'Rückgängig', run: () => { if (handle) { fileHandles[id] = handle; fileState[id] = 'ok'; idbSet(id, handle); } restoreDoc(d); } });
     if (cloud && d.synced) {
       try {
@@ -3998,6 +4008,22 @@ return __m['turndown'].default;
         if (tombstones.has(id) && cloud) await cloud.doc(id).delete();
       } catch (e) { /* bleibt lokal gelöscht */ }
     }
+  }
+  async function closeDoc(id, force) {
+    const d = docs[id];
+    if (!d) return;
+    if (!fileHandles[id]) { pendingDelete = id; focusConfirm = true; renderDocList(); return; }
+    // Noch nicht geschriebene Änderungen zuerst in die Datei sichern
+    if (!force && (fileTimers[id] || fileState[id] === 'writing')) {
+      clearTimeout(fileTimers[id]); delete fileTimers[id];
+      const ok = await withTimeout(writeFile(id, true), 4000, false);
+      if (!docs[id]) return;
+      if (!ok) {
+        toast('Die letzten Änderungen konnten nicht in „' + (d.file || 'die Datei') + '“ geschrieben werden.', { label: 'Trotzdem schließen', run: () => closeDoc(id, true) });
+        return;
+      }
+    }
+    deleteDoc(id);
   }
   function restoreDoc(d) {
     tombstones.delete(d.id);
@@ -5272,10 +5298,18 @@ return __m['turndown'].default;
     for (const id of Object.keys(fileTimers)) { clearTimeout(fileTimers[id]); delete fileTimers[id]; writeFile(id, false); }
   }
 
+  // Manche gespeicherten Datei-Handles antworten nie (z. B. verschobene Datei, Netzlaufwerk).
+  // Damit das Öffnen nicht still hängen bleibt, wird nach kurzer Zeit aufgegeben.
+  function withTimeout(p, ms, fallback) {
+    return Promise.race([Promise.resolve(p), new Promise((res) => setTimeout(() => res(fallback), ms))]);
+  }
+
   async function openHandle(handle) {
     for (const id of Object.keys(fileHandles)) {
       try {
-        if (docs[id] && await fileHandles[id].isSameEntry(handle)) {
+        const known = fileHandles[id];
+        if (!docs[id] || !known || known.name !== handle.name) continue;
+        if (await withTimeout(known.isSameEntry(handle), 1500, false)) {
           const text = (await (await handle.getFile()).text()).replace(/\r\n?/g, '\n');
           fileHandles[id] = handle; idbSet(id, handle);
           const d = docs[id];
@@ -5338,7 +5372,7 @@ return __m['turndown'].default;
       if (!docs[id]) { idbDel(id); continue; }
       fileHandles[id] = map[id];
       try {
-        const p = typeof map[id].queryPermission === 'function' ? await map[id].queryPermission({ mode: 'readwrite' }) : 'granted';
+        const p = typeof map[id].queryPermission === 'function' ? await withTimeout(map[id].queryPermission({ mode: 'readwrite' }), 1500, 'prompt') : 'granted';
         fileState[id] = p === 'granted' ? 'ok' : 'need';
       } catch (e) { fileState[id] = 'need'; }
     }
@@ -5670,7 +5704,7 @@ return __m['turndown'].default;
         if ('launchQueue' in window && window.launchQueue && typeof window.launchQueue.setConsumer === 'function') {
           window.launchQueue.setConsumer(async (params) => {
             if (!params || !params.files || !params.files.length) return;
-            await restored;
+            await withTimeout(restored.catch(() => {}), 5000);
             for (const h of params.files) {
               if (h.kind !== 'file') continue;
               try { await openHandle(h); } catch (e) { toast('„' + h.name + '“ konnte nicht geöffnet werden.'); }
